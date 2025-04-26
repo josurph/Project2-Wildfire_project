@@ -14,20 +14,6 @@ This is a simple Python project me and my partner made for **CMPSC 132** that si
 
 ---
 
-## What I Used From CMPSC 132
-
-This project shows a bunch of stuff we’ve learned in class:
-
-- Classes and Inheritance  
-- File writing and reading  
-- Try/Except (custom error handling for faulty sensors)  
-- Abstract base classes using `NotImplementedError`  
-- Lists, loops, and conditional logic  
-- Working with timestamps using the `datetime` module  
-- Randomized values for simulating sensor activity  
-
----
-
 ## Interaction
 
 When using this code, there will four options left for you to type and choose.
