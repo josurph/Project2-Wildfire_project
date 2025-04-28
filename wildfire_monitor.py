@@ -46,6 +46,7 @@ class MonitorStation:
         self.temperature_sensors = []
         self.smoke_sensors = []
         self.logs = []
+        self.latest_readings = {}  # Store latest sensor readings
 
     def add_temperature_sensor(self, location):
         self.temperature_sensors.append(TemperatureSensor(location))
@@ -55,36 +56,49 @@ class MonitorStation:
 
     def run_diagnostics(self):
         print(f"\nRunning diagnostics for Station {self.station_id}...\n")
+        self.latest_readings.clear()  # Clear previous readings
         for sensor in self.temperature_sensors + self.smoke_sensors:
             try:
                 reading = sensor.read_data()
                 status = f"{sensor.__class__.__name__} at {sensor.location} reading: {reading}"
                 self.logs.append((sensor.location, datetime.now(), reading))
+                self.latest_readings[(sensor.__class__.__name__, sensor.location)] = reading
                 print(status)
             except SensorError as e:
                 self.logs.append((sensor.location, datetime.now(), "ERROR"))
+                self.latest_readings[(sensor.__class__.__name__, sensor.location)] = "ERROR"
                 print(f"ERROR: {e}")
 
     def detect_wildfire(self):
         alert = False
         print("\nEvaluating wildfire conditions...\n")
+        if not self.latest_readings:
+            print("No diagnostic data available. Please run diagnostics first.")
+            return alert
+
         for t_sensor, s_sensor in zip(self.temperature_sensors, self.smoke_sensors):
-            try:
-                temp = t_sensor.read_data()
-                smoke = s_sensor.read_data()
-                print(f"[{t_sensor.location}] Temp: {temp}°C, Smoke: {smoke}")
-                if temp > 50 and smoke >= 7:
-                    print(f"🔥 Wildfire Alert at {t_sensor.location}! 🔥")
-                    alert = True
-            except SensorError as e:
-                print(f"Sensor error: {e}")
+            temp_key = (TemperatureSensor.__name__, t_sensor.location)
+            smoke_key = (SmokeSensor.__name__, s_sensor.location)
+            
+            temp = self.latest_readings.get(temp_key)
+            smoke = self.latest_readings.get(smoke_key)
+            
+            if temp == "ERROR" or smoke == "ERROR":
+                print(f"Sensor error at {t_sensor.location}: Unable to evaluate")
+                continue
+                
+            print(f"[{t_sensor.location}] Temp: {temp}°C, Smoke: {smoke}")
+            if temp > 50 and smoke >= 7:
+                print(f"🔥 Wildfire Alert at {t_sensor.location}! 🔥")
+                alert = True
+                
         return alert
 
     def save_logs(self, filename="wildfire_logs.txt"):
         with open(filename, "a") as f:
             for log in self.logs:
                 f.write(f"{log[0]} | {log[1]} | {log[2]}\n")
-        print("\nLogs saved successfully.\n")
+        print("Logs saved successfully.\n")
 
 
 # Utility function to simulate user interface
@@ -128,4 +142,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
